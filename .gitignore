@@ -1,0 +1,16 @@
+
+# Java build files
+target/
+out/
+build/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Secrets and local configuration
+.env
+application-local.properties
+
+# Logs
+*.log

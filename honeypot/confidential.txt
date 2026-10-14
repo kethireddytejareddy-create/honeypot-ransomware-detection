@@ -1,0 +1,3 @@
+This is a honeypot file.
+
+This file contains no real information.

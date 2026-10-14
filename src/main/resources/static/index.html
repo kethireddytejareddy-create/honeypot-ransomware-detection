@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Honeypot Ransomware Detection System</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f5f9;
+            text-align: center;
+            margin: 0;
+        }
+
+        header {
+            background-color: #17202a;
+            color: white;
+            padding: 25px;
+        }
+
+        .container {
+            margin: 40px auto;
+            width: 80%;
+        }
+
+        .status-box {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px gray;
+        }
+
+        .safe {
+            color: green;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .alarm {
+            color: red;
+            font-size: 30px;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 20px;
+        }
+
+        .alarm-button,
+        .stop-button {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .alarm-button {
+            background-color: #17202a;
+        }
+
+        .alarm-button:hover {
+            background-color: #34495e;
+        }
+
+        .alarm-enabled {
+            background-color: green !important;
+        }
+
+        .stop-button {
+            background-color: #c0392b;
+            margin-left: 10px;
+        }
+
+        .stop-button:hover {
+            background-color: #922b21;
+        }
+
+        .test-button {
+            background-color: #8e44ad;
+            margin-left: 10px;
+        }
+
+        .test-button:hover {
+            background-color: #71368a;
+        }
+
+        .alerts-box {
+            margin-top: 30px;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px gray;
+            text-align: left;
+        }
+
+        .attack-count {
+            text-align: center;
+            font-size: 50px;
+            font-weight: bold;
+            color: red;
+            margin: 10px 0;
+        }
+
+        .alert-item {
+            border-left: 5px solid red;
+            background-color: #fff0f0;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .alert-item strong {
+            color: red;
+        }
+
+        @keyframes blink {
+
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>🛡️ Honeypot Ransomware Detection System</h1>
+
+    <p>Real-Time Security Monitoring Dashboard</p>
+
+</header>
+
+
+<div class="container">
+
+
+    <!-- SYSTEM STATUS -->
+
+    <div class="status-box">
+
+        <h2>System Status</h2>
+
+        <p id="status" class="safe">
+            🟢 SYSTEM SAFE
+        </p>
+
+        <p id="message" class="message">
+            Honeypot files are being monitored.
+        </p>
+
+
+        <button id="alarmButton" class="alarm-button">
+            🔊 ENABLE ALARM
+        </button>
+
+
+        <button id="stopButton" class="stop-button">
+            🔇 STOP ALARM
+        </button>
+
+
+        <button id="testAlertButton"
+                class="alarm-button test-button">
+            🔌 TEST CONNECTION
+        </button>
+
+    </div>
+
+
+
+    <!-- TOTAL ATTACK COUNTER -->
+
+    <div class="alerts-box">
+
+        <h2 style="text-align: center;">
+            🚨 Total Attacks Detected
+        </h2>
+
+        <p id="attackCount" class="attack-count">
+            0
+        </p>
+
+    </div>
+
+
+
+    <!-- ALERT LIST -->
+
+    <div class="alerts-box">
+
+        <h2>🚨 Detected Alerts</h2>
+
+        <div id="alertsList">
+
+            <p>No alerts loaded yet.</p>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+
+<script>
+
+
+    /*
+     * VARIABLES
+     */
+
+    let alarmEnabled = false;
+
+    let alarmInterval = null;
+
+    let previousLatestAlertId = null;
+
+    let firstCheck = true;
+
+
+
+    /*
+     * ENABLE ALARM
+     */
+
+    document
+        .getElementById("alarmButton")
+        .addEventListener("click", async function () {
+
+
+            alarmEnabled = true;
+
+
+            /*
+             * CREATE AUDIO CONTEXT
+             */
+
+            if (!window.audioContext) {
+
+                window.audioContext =
+                    new (
+                        window.AudioContext ||
+                        window.webkitAudioContext
+                    )();
+
+            }
+
+
+            /*
+             * RESUME AUDIO
+             */
+
+            if (
+                window.audioContext.state ===
+                "suspended"
+            ) {
+
+                await window.audioContext.resume();
+
+            }
+
+
+            /*
+             * CHANGE BUTTON
+             */
+
+            this.innerHTML =
+                "🔊 ALARM ENABLED";
+
+
+            this.classList.add(
+                "alarm-enabled"
+            );
+
+
+            /*
+             * TEST BEEP
+             */
+
+            playBeep();
+
+        });
+
+
+
+    /*
+     * STOP ALARM
+     */
+
+    document
+        .getElementById("stopButton")
+        .addEventListener("click", function () {
+
+
+            stopAlarm();
+
+
+            alarmEnabled = false;
+
+
+            const alarmButton =
+                document.getElementById(
+                    "alarmButton"
+                );
+
+
+            alarmButton.innerHTML =
+                "🔊 ENABLE ALARM";
+
+
+            alarmButton.classList.remove(
+                "alarm-enabled"
+            );
+
+        });
+
+
+
+    /*
+     * TEST CONNECTION BUTTON
+     *
+     * This only checks whether the alerts API is reachable.
+     * It does NOT create a ransomware alert.
+     */
+
+    document
+        .getElementById("testAlertButton")
+        .addEventListener("click", async function () {
+
+            const button = this;
+
+            button.disabled = true;
+            button.innerHTML = "⏳ CHECKING CONNECTION...";
+
+            try {
+                const response = await fetch("/api/alerts", {
+                    method: "GET",
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error("Server returned HTTP " + response.status);
+                }
+
+                // Read the response to confirm that the API replied.
+                await response.json();
+
+                alert(
+                    "✅ Connection successful!\\n\\n" +
+                    "The server responded. No ransomware alert was created."
+                );
+
+            } catch (error) {
+                console.error("Connection test failed:", error);
+
+                alert(
+                    "❌ Connection failed.\\n\\n" +
+                    "Make sure the Spring Boot application is running and /api/alerts is available."
+                );
+
+            } finally {
+                button.innerHTML = "🔌 TEST CONNECTION";
+                button.disabled = false;
+            }
+        });
+
+
+
+    /*
+     * SINGLE BEEP
+     */
+
+    function playBeep() {
+
+
+        if (!alarmEnabled) {
+
+            return;
+
+        }
+
+
+        if (!window.audioContext) {
+
+            return;
+
+        }
+
+
+        const oscillator =
+            window.audioContext
+                .createOscillator();
+
+
+        const gain =
+            window.audioContext
+                .createGain();
+
+
+        oscillator.connect(gain);
+
+
+        gain.connect(
+            window.audioContext.destination
+        );
+
+
+        oscillator.frequency.value = 900;
+
+
+        oscillator.type = "square";
+
+
+        gain.gain.setValueAtTime(
+            0.25,
+            window.audioContext.currentTime
+        );
+
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.01,
+            window.audioContext.currentTime + 0.4
+        );
+
+
+        oscillator.start();
+
+
+        oscillator.stop(
+            window.audioContext.currentTime + 0.4
+        );
+
+    }
+
+
+
+    /*
+     * START REPEATED ALARM
+     */
+
+    function startAlarm() {
+
+
+        if (!alarmEnabled) {
+
+            return;
+
+        }
+
+
+        if (alarmInterval !== null) {
+
+            return;
+
+        }
+
+
+        playBeep();
+
+
+        alarmInterval =
+            setInterval(
+                function () {
+
+                    playBeep();
+
+                },
+                1000
+            );
+
+    }
+
+
+
+    /*
+     * STOP REPEATED ALARM
+     */
+
+    function stopAlarm() {
+
+
+        if (alarmInterval !== null) {
+
+            clearInterval(
+                alarmInterval
+            );
+
+
+            alarmInterval = null;
+
+        }
+
+    }
+
+
+
+    /*
+     * CHECK ALERTS
+     */
+
+    async function checkAlerts() {
+
+
+        try {
+
+
+            const response =
+                await fetch(
+                    "/api/alerts"
+                );
+
+
+            const alerts =
+                await response.json();
+
+
+            const status =
+                document.getElementById(
+                    "status"
+                );
+
+
+            const message =
+                document.getElementById(
+                    "message"
+                );
+
+
+            const alertsList =
+                document.getElementById(
+                    "alertsList"
+                );
+
+
+            const attackCount =
+                document.getElementById(
+                    "attackCount"
+                );
+
+
+
+            /*
+             * UPDATE ATTACK COUNT
+             */
+
+            attackCount.innerHTML =
+                alerts.length;
+
+
+
+            /*
+             * CHECK FOR ALERTS
+             */
+
+            if (alerts.length > 0) {
+
+
+                const latestAlert =
+                    alerts[
+                        alerts.length - 1
+                    ];
+
+
+
+                /*
+                 * DETECT NEW ALERT
+                 */
+
+                if (
+                    !firstCheck &&
+                    latestAlert.id !==
+                    previousLatestAlertId
+                ) {
+
+
+                    if (alarmEnabled) {
+
+                        startAlarm();
+
+                    }
+
+                }
+
+
+
+                previousLatestAlertId =
+                    latestAlert.id;
+
+
+
+                /*
+                 * SHOW RANSOMWARE ALERT
+                 */
+
+                status.className =
+                    "alarm";
+
+
+                status.innerHTML =
+                    "🔴 RANSOMWARE ALERT";
+
+
+                message.innerHTML =
+
+                    "⚠️ Suspicious activity detected!<br><br>" +
+
+                    "<b>Type:</b> " +
+                    latestAlert.alertType +
+                    "<br>" +
+
+                    "<b>IP Address:</b> " +
+                    latestAlert.attackerIp +
+                    "<br>" +
+
+                    "<b>Description:</b> " +
+                    latestAlert.description +
+                    "<br>" +
+
+                    "<b>Status:</b> " +
+                    latestAlert.status +
+                    "<br>" +
+
+                    "<b>Time:</b> " +
+                    latestAlert.timestamp;
+
+            }
+
+
+            else {
+
+
+                /*
+                 * SYSTEM SAFE
+                 */
+
+                status.className =
+                    "safe";
+
+
+                status.innerHTML =
+                    "🟢 SYSTEM SAFE";
+
+
+                message.innerHTML =
+                    "Honeypot files are being monitored.";
+
+
+                stopAlarm();
+
+
+                previousLatestAlertId =
+                    null;
+
+            }
+
+
+
+            /*
+             * SHOW ALL ALERTS
+             */
+
+            if (alerts.length === 0) {
+
+
+                alertsList.innerHTML =
+                    "<p>✅ No ransomware activity detected.</p>";
+
+            }
+
+
+            else {
+
+
+                alertsList.innerHTML =
+                    "";
+
+
+                alerts
+                    .slice()
+                    .reverse()
+                    .forEach(
+                        function (alert) {
+
+
+                            const alertDiv =
+                                document.createElement(
+                                    "div"
+                                );
+
+
+                            alertDiv.className =
+                                "alert-item";
+
+
+                            alertDiv.innerHTML =
+
+                                "<strong>🚨 RANSOMWARE ACTIVITY</strong><br><br>" +
+
+                                "<b>Alert Type:</b> " +
+                                alert.alertType +
+                                "<br>" +
+
+                                "<b>Attacker IP:</b> " +
+                                alert.attackerIp +
+                                "<br>" +
+
+                                "<b>Description:</b> " +
+                                alert.description +
+                                "<br>" +
+
+                                "<b>Status:</b> " +
+                                alert.status +
+                                "<br>" +
+
+                                "<b>Time:</b> " +
+                                alert.timestamp;
+
+
+                            alertsList.appendChild(
+                                alertDiv
+                            );
+
+                        }
+                    );
+
+            }
+
+
+            firstCheck = false;
+
+        }
+
+
+        catch (error) {
+
+
+            console.error(
+                "Unable to check alerts:",
+                error
+            );
+
+        }
+
+    }
+
+
+
+    /*
+     * FIRST CHECK
+     */
+
+    checkAlerts();
+
+
+
+    /*
+     * CHECK EVERY 3 SECONDS
+     */
+
+    setInterval(
+        checkAlerts,
+        3000
+    );
+
+
+</script>
+
+
+</body>
+
+</html>
